@@ -2,6 +2,7 @@ package gui;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JDesktopPane;
@@ -13,6 +14,7 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import java.lang.String;
 
 import log.Logger;
 
@@ -98,46 +100,43 @@ public class MainApplicationFrame extends JFrame
     private JMenuBar generateMenuBar()
     {
         JMenuBar menuBar = new JMenuBar();
+    
+        JMenu lookAndFeelMenu = addMenu("Режим отображения", KeyEvent.VK_V, "Управление режимом отображения приложения", menuBar);
         
-        JMenu lookAndFeelMenu = new JMenu("Режим отображения");
-        lookAndFeelMenu.setMnemonic(KeyEvent.VK_V);
-        lookAndFeelMenu.getAccessibleContext().setAccessibleDescription(
-                "Управление режимом отображения приложения");
+        addMenuItem("Системная схема", KeyEvent.VK_S, (event) -> {
+            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            this.invalidate();
+        }, lookAndFeelMenu);
         
-        {
-            JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
-            systemLookAndFeel.addActionListener((event) -> {
-                setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                this.invalidate();
-            });
-            lookAndFeelMenu.add(systemLookAndFeel);
-        }
+        addMenuItem("Универсальная схема", KeyEvent.VK_S, (event) -> {
+            setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            this.invalidate();
+        }, lookAndFeelMenu); 
 
-        {
-            JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_S);
-            crossplatformLookAndFeel.addActionListener((event) -> {
-                setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-                this.invalidate();
-            });
-            lookAndFeelMenu.add(crossplatformLookAndFeel);
-        }
+        JMenu testMenu = addMenu ("Тесты", KeyEvent.VK_T, "Тестовые команды", menuBar);
 
-        JMenu testMenu = new JMenu("Тесты");
-        testMenu.setMnemonic(KeyEvent.VK_T);
-        testMenu.getAccessibleContext().setAccessibleDescription(
-                "Тестовые команды");
-        
-        {
-            JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_S);
-            addLogMessageItem.addActionListener((event) -> {
-                Logger.debug("Новая строка");
-            });
-            testMenu.add(addLogMessageItem);
-        }
+        addMenuItem("Сообщение в лог", KeyEvent.VK_S, (event) -> {
+            Logger.debug("Новая строка");
+        }, testMenu);
 
-        menuBar.add(lookAndFeelMenu);
-        menuBar.add(testMenu);
         return menuBar;
+    }
+    
+    private JMenu addMenu(String name, int mnemonic, String description, JMenuBar menuBar)
+    {
+    	JMenu menu = new JMenu(name);
+        menu.setMnemonic(mnemonic);
+        menu.getAccessibleContext().setAccessibleDescription(description);
+        menuBar.add(menu);
+    	return menu;
+    }
+    
+    private JMenuItem addMenuItem(String name, int mnemonic, ActionListener callback, JMenu menu)
+    {
+    	 JMenuItem menuItem = new JMenuItem(name, mnemonic);
+         menuItem.addActionListener(callback);
+         menu.add(menuItem);
+         return menuItem;  
     }
     
     private void setLookAndFeel(String className)
