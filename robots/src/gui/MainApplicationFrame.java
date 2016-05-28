@@ -1,9 +1,14 @@
 package gui;
 
+
+
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
@@ -11,6 +16,8 @@ import javax.swing.JInternalFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -48,7 +55,12 @@ public class MainApplicationFrame extends JFrame
         addWindow(gameWindow);
 
         setJMenuBar(generateMenuBar());
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter(){
+        	public void windowClosing(WindowEvent e){
+        		confirmExit();
+        	}
+        });
     }
     
     protected LogWindow createLogWindow()
@@ -67,7 +79,7 @@ public class MainApplicationFrame extends JFrame
         desktopPane.add(frame);
         frame.setVisible(true);
     }
-    
+
 //    protected JMenuBar createMenuBar() {
 //        JMenuBar menuBar = new JMenuBar();
 // 
@@ -96,7 +108,7 @@ public class MainApplicationFrame extends JFrame
 // 
 //        return menuBar;
 //    }
-    
+     
     private JMenuBar generateMenuBar()
     {
         JMenuBar menuBar = new JMenuBar();
@@ -119,9 +131,22 @@ public class MainApplicationFrame extends JFrame
             Logger.debug("Новая строка");
         }, testMenu);
 
+        JMenu quitMenu = addMenu("Файл", KeyEvent.VK_F,"", menuBar);
+        addMenuItem("Выход", KeyEvent.VK_Q, (event) -> {
+        	confirmExit();
+        }, quitMenu);
+ 
         return menuBar;
     }
     
+	private void confirmExit(){
+    	JOptionPane pane = new JOptionPane();
+    	Object[] options = {"Да, выйти!", "Я передумал"};
+    	int result = pane.showOptionDialog(null, "Вы действительно хотите выйти?", "Выход", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+    	if(result == JOptionPane.YES_OPTION)
+    	{System.exit(0);}
+    }
+
     private JMenu addMenu(String name, int mnemonic, String description, JMenuBar menuBar)
     {
     	JMenu menu = new JMenu(name);
