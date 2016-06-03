@@ -39,9 +39,7 @@ public class MenuBar extends JMenuBar {
 	        }, quitMenu);
 	 
 	        return this;
-	    }
-		   
-
+	   }
 	
 	   private JMenu addMenu(String name, int mnemonic, String description)
 	    {

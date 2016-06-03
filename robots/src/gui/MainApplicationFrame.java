@@ -1,7 +1,5 @@
 package gui;
 
-
-
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
@@ -29,15 +27,14 @@ import log.Logger;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
-    protected LogWindow logWindow;
-    protected GameWindow gameWindow;
-    protected WindowState logWindowRestoredState;
-    protected WindowState gameWindowRestoredState;
-    protected WindowState mainWindowRestoredState;
-    protected String saveStateFilename = "windowState.dat";
-    protected String saveStateDirectory = System.getProperty("user.home");
-    
-    
+    private LogWindow logWindow;
+    private GameWindow gameWindow;
+    private WindowState logWindowRestoredState;
+    private WindowState gameWindowRestoredState;
+    private WindowState mainWindowRestoredState;
+    private String saveStateFilename = "windowState.dat";
+    private String saveStateDirectory = System.getProperty("user.home");
+     
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
         //of the screen.
@@ -76,7 +73,7 @@ public class MainApplicationFrame extends JFrame
              screenSize.height - inset*2);
     }
     
-    public void setWindowsState() {
+    private void setWindowsState() {
     	try {
      		setMainState();
      		logWindow.setDefaultOrRestoredState();
@@ -92,7 +89,7 @@ public class MainApplicationFrame extends JFrame
     }
     
     
-    public void setMainState() throws PropertyVetoException{
+    private void setMainState() throws PropertyVetoException{
 		if (mainWindowRestoredState == null){
 			setDefaultBounds();
 		} else {
@@ -148,7 +145,7 @@ public class MainApplicationFrame extends JFrame
     	}
     }
 	
-	protected void saveGameState() 
+	private void saveGameState() 
 	{
 		WindowState mainState = new WindowState(this);
 		WindowState logState = new WindowState(logWindow);
@@ -186,7 +183,7 @@ public class MainApplicationFrame extends JFrame
 		
 	}
 	
-	protected void restoreGameState()
+	private void restoreGameState()
 	{
 		System.out.println(saveStateDirectory);
 		File file = new File(saveStateDirectory, saveStateFilename);
