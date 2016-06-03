@@ -3,12 +3,15 @@ package gui;
 
 
 import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
+import java.awt.Window;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyVetoException;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
@@ -17,11 +20,11 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import java.lang.String;
+import java.io.*;
 
 import log.Logger;
 
@@ -34,24 +37,31 @@ import log.Logger;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
+    protected LogWindow logWindow;
+    protected GameWindow gameWindow;
+    protected WindowState logWindowRestoredState;
+    protected WindowState gameWindowRestoredState;
+    protected WindowState mainWindowRestoredState;
+    protected String saveStateFilename = "windowState.dat";
+    protected String saveStateDirectory = System.getProperty("user.home");
+    
     
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
         //of the screen.
-        int inset = 50;        
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds(inset, inset,
-            screenSize.width  - inset*2,
-            screenSize.height - inset*2);
-
+    	
+    	setDefaultBounds();
         setContentPane(desktopPane);
+        setMinimumSize(new Dimension(500, 500));
+       
+        logWindow = new LogWindow(Logger.getDefaultLogSource());
+        gameWindow = new GameWindow();
+       
+        restoreGameState(); 
+        setWindowsState();
         
-        
-        LogWindow logWindow = createLogWindow();
+        logWindow.changeViewSettings();
         addWindow(logWindow);
-
-        GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(400,  400);
         addWindow(gameWindow);
 
         setJMenuBar(generateMenuBar());
@@ -61,18 +71,40 @@ public class MainApplicationFrame extends JFrame
         		confirmExit();
         	}
         });
+        //pack();
     }
     
-    protected LogWindow createLogWindow()
-    {
-        LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
-        logWindow.setLocation(10,10);
-        logWindow.setSize(300, 800);
-        setMinimumSize(logWindow.getSize());
-        logWindow.pack();
-        Logger.debug("Протокол работает");
-        return logWindow;
+    private void setDefaultBounds(){
+    	 int inset = 50;        
+         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+         setBounds(inset, inset,
+             screenSize.width  - inset*2,
+             screenSize.height - inset*2);
     }
+    
+    public void setWindowsState() {
+    	try {
+     		setMainState();
+     		logWindow.setDefaultOrRestoredState();
+     		gameWindow.setDefaultOrRestoredState();
+   		} catch (PropertyVetoException e) {
+   			mainWindowRestoredState = null;
+   			logWindow.setRestoredState(null);
+     		gameWindow.setRestoredState(null);
+     		setWindowsState();
+   			e.printStackTrace();
+   		}
+    	
+    }
+    
+    
+    public void setMainState() throws PropertyVetoException{
+		if (mainWindowRestoredState == null){
+			setDefaultBounds();
+		} else {
+			mainWindowRestoredState.assignItToWindow(this);	
+		}
+	}
     
     protected void addWindow(JInternalFrame frame)
     {
@@ -133,19 +165,125 @@ public class MainApplicationFrame extends JFrame
 
         JMenu quitMenu = addMenu("Файл", KeyEvent.VK_F,"", menuBar);
         addMenuItem("Выход", KeyEvent.VK_Q, (event) -> {
-        	confirmExit();
+        	Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         }, quitMenu);
  
         return menuBar;
     }
     
-	private void confirmExit(){
+	protected void confirmExit()
+	{
     	JOptionPane pane = new JOptionPane();
     	Object[] options = {"Да, выйти!", "Я передумал"};
     	int result = pane.showOptionDialog(null, "Вы действительно хотите выйти?", "Выход", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
     	if(result == JOptionPane.YES_OPTION)
-    	{System.exit(0);}
+    	{
+    		saveGameState();
+    		System.exit(0);
+    	}
     }
+	
+	protected void saveGameState()  //обернуть в трай кэтч
+	{
+		WindowState c = new WindowState(this);
+		WindowState a = new WindowState(logWindow);
+		WindowState b = new WindowState(gameWindow);
+		
+		File file = new File(saveStateDirectory, saveStateFilename);
+		try
+		{
+			OutputStream os = new FileOutputStream(file);
+			try
+			{
+				ObjectOutputStream oos =
+						new ObjectOutputStream(new BufferedOutputStream(os));
+				try
+				{
+					oos.writeObject(a);
+					oos.writeObject(b);
+					oos.writeObject(c);
+					oos.flush();
+				}
+				finally
+				{
+					oos.close();
+				}
+			}
+			finally
+			{
+				os.close();
+			}}
+		
+		catch (IOException ex)
+		{ 
+			ex.printStackTrace(); 
+		}
+		
+	}
+	
+	protected void restoreGameState()
+	{
+		System.out.println(saveStateDirectory);
+		File file = new File(saveStateDirectory, saveStateFilename);
+		if (file.exists()!= true){
+			return;
+		}
+		
+		try
+		{
+		InputStream is = new FileInputStream(file);
+		try
+		{
+			ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(is));
+			
+			try
+			{
+				
+				logWindowRestoredState = (WindowState)ois.readObject();
+				logWindowRestoredState.printState();
+				gameWindowRestoredState = (WindowState)ois.readObject();
+				gameWindowRestoredState.printState();
+				mainWindowRestoredState = (WindowState)ois.readObject();
+				mainWindowRestoredState.printState();
+				
+			}
+			catch (ClassNotFoundException ex)
+			{ ex.printStackTrace(); }
+			finally
+			{ ois.close(); }
+			
+		}
+		finally
+		{ is.close(); }
+		}
+		catch (IOException ex)
+		{ ex.printStackTrace();}	
+		
+		/*try {
+			mainWindowRestoredState.assignItToWindow(this);
+		} catch (PropertyVetoException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		/*
+		try {
+			logWindowRestoredState.assignItToWindow(logWindow);
+		} catch (PropertyVetoException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			gameWindowRestoredState.assignItToWindow(gameWindow);
+		} catch (PropertyVetoException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+		logWindow.setRestoredState(logWindowRestoredState);
+		gameWindow.setRestoredState(gameWindowRestoredState);
+	
+	}
+	
+	
 
     private JMenu addMenu(String name, int mnemonic, String description, JMenuBar menuBar)
     {

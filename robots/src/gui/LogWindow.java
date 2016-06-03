@@ -2,7 +2,9 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.awt.Rectangle;
 import java.awt.TextArea;
+import java.beans.PropertyVetoException;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
@@ -10,8 +12,9 @@ import javax.swing.JPanel;
 import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
+import log.Logger;
 
-public class LogWindow extends JInternalFrame implements LogChangeListener
+public class LogWindow extends InternalWindow implements LogChangeListener
 {
     private LogWindowSource m_logSource;
     private TextArea m_logContent;
@@ -19,6 +22,7 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
     public LogWindow(LogWindowSource logSource) 
     {
         super("Протокол работы", true, true, true, true);
+        defaultSize = new Rectangle(10, 10, 300, 800);
         m_logSource = logSource;
         m_logSource.registerListener(this);
         m_logContent = new TextArea("");
@@ -29,6 +33,13 @@ public class LogWindow extends JInternalFrame implements LogChangeListener
         getContentPane().add(panel);
         pack();
         updateLogContent();
+    }
+    
+    public void changeViewSettings(){
+        setMinimumSize(getSize());
+        pack();
+        Logger.debug("Протокол работает");
+          
     }
 
     private void updateLogContent()
