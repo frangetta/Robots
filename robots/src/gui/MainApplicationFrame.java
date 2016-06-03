@@ -3,12 +3,7 @@ package gui;
 
 
 import java.awt.Dimension;
-import java.awt.Frame;
-import java.awt.Rectangle;
 import java.awt.Toolkit;
-import java.awt.Window;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyVetoException;
@@ -16,9 +11,6 @@ import java.beans.PropertyVetoException;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -63,8 +55,10 @@ public class MainApplicationFrame extends JFrame
         logWindow.changeViewSettings();
         addWindow(logWindow);
         addWindow(gameWindow);
-
-        setJMenuBar(generateMenuBar());
+        
+        MenuBar menuBar = new MenuBar();
+        setJMenuBar(menuBar.generateMenuBar(this));
+        
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter(){
         	public void windowClosing(WindowEvent e){
@@ -141,41 +135,12 @@ public class MainApplicationFrame extends JFrame
 //        return menuBar;
 //    }
      
-    private JMenuBar generateMenuBar()
-    {
-        JMenuBar menuBar = new JMenuBar();
     
-        JMenu lookAndFeelMenu = addMenu("Режим отображения", KeyEvent.VK_V, "Управление режимом отображения приложения", menuBar);
-        
-        addMenuItem("Системная схема", KeyEvent.VK_S, (event) -> {
-            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            this.invalidate();
-        }, lookAndFeelMenu);
-        
-        addMenuItem("Универсальная схема", KeyEvent.VK_S, (event) -> {
-            setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            this.invalidate();
-        }, lookAndFeelMenu); 
-
-        JMenu testMenu = addMenu ("Тесты", KeyEvent.VK_T, "Тестовые команды", menuBar);
-
-        addMenuItem("Сообщение в лог", KeyEvent.VK_S, (event) -> {
-            Logger.debug("Новая строка");
-        }, testMenu);
-
-        JMenu quitMenu = addMenu("Файл", KeyEvent.VK_F,"", menuBar);
-        addMenuItem("Выход", KeyEvent.VK_Q, (event) -> {
-        	Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
-        }, quitMenu);
- 
-        return menuBar;
-    }
     
 	protected void confirmExit()
 	{
-    	JOptionPane pane = new JOptionPane();
     	Object[] options = {"Да, выйти!", "Я передумал"};
-    	int result = pane.showOptionDialog(null, "Вы действительно хотите выйти?", "Выход", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+    	int result = JOptionPane.showOptionDialog(null, "Вы действительно хотите выйти?", "Выход", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
     	if(result == JOptionPane.YES_OPTION)
     	{
     		saveGameState();
@@ -183,25 +148,25 @@ public class MainApplicationFrame extends JFrame
     	}
     }
 	
-	protected void saveGameState()  //обернуть в трай кэтч
+	protected void saveGameState() 
 	{
-		WindowState c = new WindowState(this);
-		WindowState a = new WindowState(logWindow);
-		WindowState b = new WindowState(gameWindow);
+		WindowState mainState = new WindowState(this);
+		WindowState logState = new WindowState(logWindow);
+		WindowState gameState = new WindowState(gameWindow);
 		
 		File file = new File(saveStateDirectory, saveStateFilename);
 		try
 		{
-			OutputStream os = new FileOutputStream(file);
+			OutputStream fos = new FileOutputStream(file);
 			try
 			{
 				ObjectOutputStream oos =
-						new ObjectOutputStream(new BufferedOutputStream(os));
+						new ObjectOutputStream(new BufferedOutputStream(fos));
 				try
 				{
-					oos.writeObject(a);
-					oos.writeObject(b);
-					oos.writeObject(c);
+					oos.writeObject(mainState);
+					oos.writeObject(logState);
+					oos.writeObject(gameState);
 					oos.flush();
 				}
 				finally
@@ -211,7 +176,7 @@ public class MainApplicationFrame extends JFrame
 			}
 			finally
 			{
-				os.close();
+				fos.close();
 			}}
 		
 		catch (IOException ex)
@@ -231,20 +196,16 @@ public class MainApplicationFrame extends JFrame
 		
 		try
 		{
-		InputStream is = new FileInputStream(file);
+		InputStream fis = new FileInputStream(file);
 		try
 		{
-			ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(is));
+			ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(fis));
 			
 			try
-			{
-				
-				logWindowRestoredState = (WindowState)ois.readObject();
-				logWindowRestoredState.printState();
-				gameWindowRestoredState = (WindowState)ois.readObject();
-				gameWindowRestoredState.printState();
+			{	
 				mainWindowRestoredState = (WindowState)ois.readObject();
-				mainWindowRestoredState.printState();
+				logWindowRestoredState = (WindowState)ois.readObject();
+				gameWindowRestoredState = (WindowState)ois.readObject();
 				
 			}
 			catch (ClassNotFoundException ex)
@@ -254,55 +215,17 @@ public class MainApplicationFrame extends JFrame
 			
 		}
 		finally
-		{ is.close(); }
+		{ fis.close(); }
 		}
 		catch (IOException ex)
 		{ ex.printStackTrace();}	
 		
-		/*try {
-			mainWindowRestoredState.assignItToWindow(this);
-		} catch (PropertyVetoException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		/*
-		try {
-			logWindowRestoredState.assignItToWindow(logWindow);
-		} catch (PropertyVetoException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			gameWindowRestoredState.assignItToWindow(gameWindow);
-		} catch (PropertyVetoException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
 		logWindow.setRestoredState(logWindowRestoredState);
 		gameWindow.setRestoredState(gameWindowRestoredState);
 	
 	}
-	
-	
-
-    private JMenu addMenu(String name, int mnemonic, String description, JMenuBar menuBar)
-    {
-    	JMenu menu = new JMenu(name);
-        menu.setMnemonic(mnemonic);
-        menu.getAccessibleContext().setAccessibleDescription(description);
-        menuBar.add(menu);
-    	return menu;
-    }
     
-    private JMenuItem addMenuItem(String name, int mnemonic, ActionListener callback, JMenu menu)
-    {
-    	 JMenuItem menuItem = new JMenuItem(name, mnemonic);
-         menuItem.addActionListener(callback);
-         menu.add(menuItem);
-         return menuItem;  
-    }
-    
-    private void setLookAndFeel(String className)
+    public void setLookAndFeel(String className)
     {
         try
         {

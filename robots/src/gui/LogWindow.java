@@ -4,9 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.Rectangle;
 import java.awt.TextArea;
-import java.beans.PropertyVetoException;
 
-import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 
 import log.LogChangeListener;

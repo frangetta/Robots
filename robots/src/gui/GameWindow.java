@@ -3,7 +3,6 @@ package gui;
 import java.awt.BorderLayout;
 import java.awt.Rectangle;
 
-import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 
 public class GameWindow extends InternalWindow
