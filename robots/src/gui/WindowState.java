@@ -9,9 +9,7 @@ import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 
 public class WindowState implements Serializable {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 8149845327544318882L;
 	private boolean isClosed;
 	private boolean isIcon;
