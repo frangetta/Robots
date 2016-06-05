@@ -4,42 +4,21 @@ import java.awt.Point;
 import static game.Helpers.*;
 import java.util.*;
 
-public class GameModel extends Observable{
-	
-	private volatile double m_robotPositionX = 100;
-	private volatile double m_robotPositionY = 100; 
-	private volatile double m_robotDirection = 0; 
+public class GameModel{
+	GameDataModel dataModel;
 
-	private volatile int m_targetPositionX = 150;
-	private volatile int m_targetPositionY = 100;
-
-	private static final double maxVelocity = 0.1; 
-	private static final double maxAngularVelocity = 0.001; 
-	
-	protected void setTargetPosition(Point p)
-    {
-        m_targetPositionX = p.x;
-        m_targetPositionY = p.y;
-    }
-	
-	public double getM_robotPositionX(){
-		return m_robotPositionX;
-	}
-	public double getM_robotPositionY(){
-		return m_robotPositionY;
-	}
-	public int getM_targetPositionX(){
-		return m_targetPositionX;
-	}
-	public int getM_targetPositionY(){
-		return m_targetPositionY;
-	}
-	public double getM_robotDirection(){
-		return m_robotDirection;
+	public GameModel(GameDataModel dataModel){
+		this.dataModel = dataModel;
 	}
     
     private void moveRobot(double velocity, double angularVelocity, double duration)
     {
+    	double maxVelocity = dataModel.getMaxVelocity();
+    	double maxAngularVelocity = dataModel.getMaxAngularVelocity();
+    	double m_robotPositionX = dataModel.getM_robotPositionX();
+    	double m_robotPositionY = dataModel.getM_robotPositionY();
+    	double m_robotDirection = dataModel.getM_robotDirection();
+    	
         velocity = applyLimits(velocity, 0, maxVelocity);
         angularVelocity = applyLimits(angularVelocity, -maxAngularVelocity, maxAngularVelocity);
         double newX = m_robotPositionX + velocity / angularVelocity * 
@@ -56,17 +35,23 @@ public class GameModel extends Observable{
         {
             newY = m_robotPositionY + velocity * duration * Math.sin(m_robotDirection);
         }
-        m_robotPositionX = newX;
-        m_robotPositionY = newY;
+        dataModel.setRobotPosition(newX, newY);
         double newDirection = asNormalizedRadians(m_robotDirection + angularVelocity * duration); 
-        m_robotDirection = newDirection;
-        setChanged();
-        notifyObservers(m_robotPositionX + " " + m_robotPositionY);
+        dataModel.setM_robotDirection(newDirection);
+        
     }
 
     
-    protected void onModelUpdateEvent()
+    protected void recalculate()
     {
+    	double maxVelocity = dataModel.getMaxVelocity();
+    	double maxAngularVelocity = dataModel.getMaxAngularVelocity();
+    	double m_robotPositionX = dataModel.getM_robotPositionX();
+    	double m_robotPositionY = dataModel.getM_robotPositionY();
+    	double m_targetPositionX = dataModel.getM_targetPositionX();
+    	double m_targetPositionY = dataModel.getM_targetPositionY();
+    	double m_robotDirection = dataModel.getM_robotDirection();
+    	
         double distance = distance(m_targetPositionX, m_targetPositionY, 
             m_robotPositionX, m_robotPositionY);
         if (distance < 0.5)

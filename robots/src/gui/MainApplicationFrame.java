@@ -48,11 +48,8 @@ public class MainApplicationFrame extends JFrame
         addWindow(logWindow);
         addWindow(gameWindow);
         
-        GameModel robotsModel = gameWindow.getModel();
-        CoordinateWindow coordWindow = new CoordinateWindow();
-        robotsModel.addObserver(coordWindow);
+        CoordinateWindow coordWindow = gameWindow.createCoordinatesWindow();
         addWindow(coordWindow);
-        
         MenuBar menuBar = new MenuBar();
         setJMenuBar(menuBar.generateMenuBar(this));
         
