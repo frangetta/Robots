@@ -56,8 +56,6 @@ public class MenuBar extends JMenuBar {
 	         menuItem.addActionListener(callback);
 	         menu.add(menuItem);
 	         return menuItem;  
-	    }
-
-		
+	    }		
 
 }

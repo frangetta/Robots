@@ -13,6 +13,9 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+
+import game.GameModel;
+
 import java.lang.String;
 import java.io.*;
 
@@ -44,6 +47,11 @@ public class MainApplicationFrame extends JFrame
         logWindow.changeViewSettings();
         addWindow(logWindow);
         addWindow(gameWindow);
+        
+        GameModel robotsModel = gameWindow.getModel();
+        CoordinateWindow coordWindow = new CoordinateWindow();
+        robotsModel.addObserver(coordWindow);
+        addWindow(coordWindow);
         
         MenuBar menuBar = new MenuBar();
         setJMenuBar(menuBar.generateMenuBar(this));
@@ -162,8 +170,7 @@ public class MainApplicationFrame extends JFrame
 			{	
 				mainWindowRestoredState = (WindowState)ois.readObject();
 				logWindowRestoredState = (WindowState)ois.readObject();
-				gameWindowRestoredState = (WindowState)ois.readObject();
-				
+				gameWindowRestoredState = (WindowState)ois.readObject();	
 			}
 			catch (ClassNotFoundException ex)
 			{ ex.printStackTrace(); }

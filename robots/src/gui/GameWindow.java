@@ -5,6 +5,9 @@ import java.awt.Rectangle;
 
 import javax.swing.JPanel;
 
+import game.GameModel;
+import game.GameVisualizer;
+
 public class GameWindow extends InternalWindow
 {
     private final GameVisualizer m_visualizer;
@@ -16,7 +19,10 @@ public class GameWindow extends InternalWindow
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);
-        setSize(400,  400);
+        setSize(400, 400);
         pack();
+    }
+    public GameModel getModel(){
+    	return m_visualizer.getModel();
     }
 }
