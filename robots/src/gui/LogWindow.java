@@ -4,7 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.awt.Rectangle;
 import java.awt.TextArea;
+import java.beans.PropertyVetoException;
 
+import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 
 import log.LogChangeListener;
@@ -12,10 +14,12 @@ import log.LogEntry;
 import log.LogWindowSource;
 import log.Logger;
 
-public class LogWindow extends InternalWindow implements LogChangeListener
+public class LogWindow extends JInternalFrame implements RestorableWindow, LogChangeListener
 {
     private LogWindowSource m_logSource;
     private TextArea m_logContent;
+    protected Rectangle defaultSize;
+	protected WindowState restoredState;
 
     public LogWindow(LogWindowSource logSource) 
     {
@@ -55,4 +59,24 @@ public class LogWindow extends InternalWindow implements LogChangeListener
     {
         EventQueue.invokeLater(this::updateLogContent);
     }
+
+    public void setDefaultBounds(){
+		setBounds(defaultSize);
+	}
+	
+	public void setRestoredState(WindowState state){
+		restoredState = state;
+	}
+	
+	public boolean stateIsNotRestored(){
+		return restoredState == null;
+	}
+	
+	public void setDefaultOrRestoredState() throws PropertyVetoException{
+		if (stateIsNotRestored()){
+			setDefaultBounds();
+		} else {
+			restoredState.assignItToWindow(this);
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -17,22 +18,24 @@ import javax.swing.UnsupportedLookAndFeelException;
 import game.GameModel;
 
 import java.lang.String;
+import java.util.ArrayList;
 import java.io.*;
 
 import log.Logger;
 
-public class MainApplicationFrame extends JFrame
+public class MainApplicationFrame extends JFrame implements RestorableWindow
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
     private LogWindow logWindow;
     private GameWindow gameWindow;
-    private WindowState logWindowRestoredState;
-    private WindowState gameWindowRestoredState;
-    private WindowState mainWindowRestoredState;
+    private CoordinateWindow coordWindow;
+    private ArrayList<RestorableWindow> windowsToRestore = new ArrayList<RestorableWindow>(); 
     private String saveStateFilename = "windowState.dat";
     private String saveStateDirectory = System.getProperty("user.home");
+    protected Rectangle defaultSize;
+	protected WindowState restoredState;
      
-    public MainApplicationFrame() {
+    public MainApplicationFrame(){
 
     	setDefaultBounds();
         setContentPane(desktopPane);
@@ -40,6 +43,13 @@ public class MainApplicationFrame extends JFrame
        
         logWindow = new LogWindow(Logger.getDefaultLogSource());
         gameWindow = new GameWindow();
+        coordWindow = gameWindow.createCoordinatesWindow();
+      
+     
+        windowsToRestore.add(this);
+        windowsToRestore.add(logWindow);
+        windowsToRestore.add(gameWindow);
+        windowsToRestore.add(coordWindow);
        
         restoreGameState(); 
         setWindowsState();
@@ -48,8 +58,9 @@ public class MainApplicationFrame extends JFrame
         addWindow(logWindow);
         addWindow(gameWindow);
         
-        CoordinateWindow coordWindow = gameWindow.createCoordinatesWindow();
         addWindow(coordWindow);
+       
+        
         MenuBar menuBar = new MenuBar();
         setJMenuBar(menuBar.generateMenuBar(this));
         
@@ -62,7 +73,7 @@ public class MainApplicationFrame extends JFrame
         //pack();
     }
     
-    private void setDefaultBounds(){
+    public void setDefaultBounds(){
     	 int inset = 50;        
          Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
          setBounds(inset, inset,
@@ -72,26 +83,15 @@ public class MainApplicationFrame extends JFrame
     
     private void setWindowsState() {
     	try {
-     		setMainState();
-     		logWindow.setDefaultOrRestoredState();
-     		gameWindow.setDefaultOrRestoredState();
+    		for (RestorableWindow i: windowsToRestore){
+    			i.setDefaultOrRestoredState();
+    		}
    		} catch (PropertyVetoException e) {
-   			mainWindowRestoredState = null;
-   			logWindow.setRestoredState(null);
-     		gameWindow.setRestoredState(null);
-     		setWindowsState();
+     		setDefaultBounds();
    			e.printStackTrace();
    		}
     	
-    }
-    
-    private void setMainState() throws PropertyVetoException{
-		if (mainWindowRestoredState == null){
-			setDefaultBounds();
-		} else {
-			mainWindowRestoredState.assignItToWindow(this);	
-		}
-	}
+    }    
     
     protected void addWindow(JInternalFrame frame)
     {
@@ -112,10 +112,10 @@ public class MainApplicationFrame extends JFrame
 	
 	private void saveGameState() 
 	{
-		WindowState mainState = new WindowState(this);
-		WindowState logState = new WindowState(logWindow);
-		WindowState gameState = new WindowState(gameWindow);
-		
+		ArrayList<WindowState> statesToRestore= new ArrayList<WindowState>();
+		for (RestorableWindow i: windowsToRestore){
+			statesToRestore.add(new WindowState(i));
+		}
 		File file = new File(saveStateDirectory, saveStateFilename);
 		try
 		{
@@ -126,9 +126,9 @@ public class MainApplicationFrame extends JFrame
 						new ObjectOutputStream(new BufferedOutputStream(fos));
 				try
 				{
-					oos.writeObject(mainState);
-					oos.writeObject(logState);
-					oos.writeObject(gameState);
+					for (WindowState j: statesToRestore){
+						oos.writeObject(j);
+					}
 					oos.flush();
 				}
 				finally
@@ -149,7 +149,10 @@ public class MainApplicationFrame extends JFrame
 	}
 	
 	private void restoreGameState()
-	{
+	{		
+		WindowState windowState;
+		RestorableWindow window;
+		
 		System.out.println(saveStateDirectory);
 		File file = new File(saveStateDirectory, saveStateFilename);
 		if (file.exists()!= true){
@@ -165,9 +168,11 @@ public class MainApplicationFrame extends JFrame
 			
 			try
 			{	
-				mainWindowRestoredState = (WindowState)ois.readObject();
-				logWindowRestoredState = (WindowState)ois.readObject();
-				gameWindowRestoredState = (WindowState)ois.readObject();	
+				for (int i = 0; i < windowsToRestore.size(); i++){
+					windowState = (WindowState)ois.readObject();
+					window = windowsToRestore.get(i);
+					window.setRestoredState(windowState);;
+				}	
 			}
 			catch (ClassNotFoundException ex)
 			{ ex.printStackTrace(); }
@@ -181,8 +186,6 @@ public class MainApplicationFrame extends JFrame
 		catch (IOException ex)
 		{ ex.printStackTrace();}	
 		
-		logWindow.setRestoredState(logWindowRestoredState);
-		gameWindow.setRestoredState(gameWindowRestoredState);
 	
 	}
     
@@ -199,6 +202,23 @@ public class MainApplicationFrame extends JFrame
             // just ignore
         }
     }
+    public void setRestoredState(WindowState state){
+		restoredState = state;
+	}
+	
+	public boolean stateIsNotRestored(){
+		return restoredState == null;
+	}
+	
+	public void setDefaultOrRestoredState() throws PropertyVetoException{
+		if (restoredState == null){
+			setDefaultBounds();
+		} else {
+			restoredState.assignItToWindow(this);	
+		}
+	}
+
+
     
 //  protected JMenuBar createMenuBar() {
 //  JMenuBar menuBar = new JMenuBar();

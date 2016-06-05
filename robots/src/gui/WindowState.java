@@ -1,7 +1,9 @@
 package gui;
 
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.beans.PropertyVetoException;
 import java.io.*;
 
@@ -18,30 +20,35 @@ public class WindowState implements Serializable {
 	private Dimension frameSize;
 	private int frameState;
 
-	public WindowState(JInternalFrame window){
-		isIcon = window.isIcon();
-		isMaximum = window.isMaximum();
-		isClosed = window.isClosed();
-		bounds = window.getBounds();
+	public WindowState(RestorableWindow window){
+		if (window instanceof JInternalFrame){
+			isIcon = ((JInternalFrame) window).isIcon();
+			isMaximum = ((JInternalFrame) window).isMaximum();
+			isClosed = ((JInternalFrame) window).isClosed();
+			bounds = ((JInternalFrame) window).getBounds();}
+		else if(window instanceof JFrame){
+			frameSize = ((JFrame) window).getSize();
+			frameState = ((JFrame) window).getExtendedState();
+		}
 	}
 	
-	public WindowState(JFrame frame){
-		frameSize = frame.getSize();
-		frameState = frame.getExtendedState();
-	}
 	
-	public JInternalFrame assignItToWindow(JInternalFrame window) throws PropertyVetoException{
-			window.setClosed(isClosed);
-			window.setIcon(isIcon);
-			window.setMaximum(isMaximum);
-			window.setBounds(bounds);
+	public RestorableWindow assignItToWindow(RestorableWindow window) throws PropertyVetoException{
+		if (window instanceof JInternalFrame){
+			((JInternalFrame) window).setClosed(isClosed);
+			((JInternalFrame) window).setIcon(isIcon);
+			((JInternalFrame) window).setMaximum(isMaximum);
+			((JInternalFrame) window).setBounds(bounds);
 			return window;
+			}
+		else if(window instanceof JFrame){
+			((JFrame) window).setSize(frameSize);
+			((JFrame) window).setExtendedState(frameState);
+			return window;
+		}
+		
+		return null;
 	}
 	
-	public JFrame assignItToWindow(JFrame frame) throws PropertyVetoException{
-		frame.setSize(frameSize);
-		frame.setExtendedState(frameState);
-		return frame;
 	
-	}
 }

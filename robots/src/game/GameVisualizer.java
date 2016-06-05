@@ -58,7 +58,7 @@ public class GameVisualizer
     
     protected void onModelUpdateEvent()
     {
-        model.recalculate();
+        model.update();
     }
     
     public GameDataModel getDataModel(){

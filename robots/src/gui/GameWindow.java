@@ -2,7 +2,9 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Rectangle;
+import java.beans.PropertyVetoException;
 
+import javax.swing.JInternalFrame;
 import javax.swing.JPanel;
 
 import game.GameDataModel;
@@ -10,9 +12,12 @@ import game.GameModel;
 import game.GameView;
 import game.GameVisualizer;
 
-public class GameWindow extends InternalWindow
+public class GameWindow extends JInternalFrame implements RestorableWindow
 {
     private final GameVisualizer m_visualizer;
+    protected Rectangle defaultSize;
+	protected WindowState restoredState;
+	
     public GameWindow() 
     {
         super("Игровое поле", true, true, true, true);
@@ -33,4 +38,24 @@ public class GameWindow extends InternalWindow
         return coordWindow;
         
     }
+
+    public void setDefaultBounds(){
+		setBounds(defaultSize);
+	}
+	
+	public void setRestoredState(WindowState state){
+		restoredState = state;
+	}
+	
+	public boolean stateIsNotRestored(){
+		return restoredState == null;
+	}
+	
+	public void setDefaultOrRestoredState() throws PropertyVetoException{
+		if (stateIsNotRestored()){
+			setDefaultBounds();
+		} else {
+			restoredState.assignItToWindow(this);
+		}
+	}
 }
